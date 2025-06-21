@@ -2,6 +2,9 @@
   "name": "tiktok-proxy-vercel",
   "version": "1.0.0",
   "type": "module",
+    "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "form-data": "^4.0.0",
     "node-fetch": "^3.3.2"
