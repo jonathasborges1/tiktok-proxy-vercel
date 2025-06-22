@@ -1,15 +1,40 @@
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 
-export default async function handler(req, res) {
-  // Habilitar CORS
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400'); // cache preflight por 1 dia
+}
 
-  // Responder preflight (CORS)
+async function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let rawData = '';
+    req.on('data', (chunk) => (rawData += chunk));
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(rawData);
+        resolve(parsed);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+export default async function handler(req, res) {
+  setCorsHeaders(res);
+
+  // ✅ Responder preflight antes de qualquer leitura do body
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   if (req.method !== 'POST') {
@@ -17,7 +42,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { url } = req.body;
+    const body = await parseBody(req);
+    const { url } = body;
 
     const form = new FormData();
     form.append('url', url);
@@ -32,9 +58,8 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(200).json(data);
+    return res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: 'Erro no proxy', detail: err.message });
+    return res.status(500).json({ error: 'Erro no proxy', detail: err.message });
   }
 }
