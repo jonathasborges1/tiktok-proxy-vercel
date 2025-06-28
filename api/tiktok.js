@@ -1,33 +1,12 @@
 import FormData from 'form-data';
 import fetch from 'node-fetch';
+import { setCorsHeaders, parseJsonBody } from './cors.utils.js';
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400'); // cache preflight por 1 dia
-}
-
-async function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let rawData = '';
-    req.on('data', (chunk) => (rawData += chunk));
-    req.on('end', () => {
-      try {
-        const parsed = JSON.parse(rawData);
-        resolve(parsed);
-      } catch (err) {
-        reject(err);
-      }
-    });
-  });
-}
 
 export default async function handler(req, res) {
   setCorsHeaders(res);
@@ -42,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = await parseBody(req);
+    const body = await parseJsonBody(req);
     const { url } = body;
 
     const form = new FormData();
